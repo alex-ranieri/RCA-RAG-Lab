@@ -1,0 +1,65 @@
+RCA-RAG LAB - INSTALADOR POR USUARIO - 16/11/2026
+
+REQUISITOS
+Windows 11 x64, navegador, LM Studio e Bionic previamente instalados.
+No LM Studio, prepare os modelos e ative o servidor de API local.
+LM Studio, Bionic e modelos nao fazem parte deste instalador.
+
+INSTALACAO
+Execute Instalar_RCA_RAG_2026.11.16_v3_x64.exe normalmente, sem executar
+como administrador. Clique em Avancar e Instalar.
+Python 3.14.10 embutido, pypdf e fonttools ja estao incluidos.
+Nao precisa instalar Python, usar pip ou acessar a internet para instalar.
+O instalador verifica o runtime, a extracao de PDF, a busca e a interface.
+
+ABRIR
+Use o atalho Abrir RCA-RAG Lab no menu Iniciar.
+O navegador abre http://127.0.0.1:8765. Mantenha a janela do servidor aberta.
+CTRL+C nessa janela encerra o servidor.
+Importe PDFs, clique em Indexar PDFs, selecione o modelo e envie sua pergunta.
+Se a porta estiver ocupada, encerre a instancia anterior ou execute
+Abrir_RAG.cmd --port 8766 na pasta instalada.
+Para gerar respostas, a API do LM Studio precisa estar ativa, com modelo local.
+
+TEMPO DE RESPOSTA (VERSAO 0.3.1)
+A espera pelo modelo passou de 210 segundos para 30 minutos por padrao.
+Em Parametros de geracao > Espera pelo modelo (minutos), ajuste de 1 a 120.
+A interface mostra o tempo decorrido enquanto aguarda a resposta.
+Carregamento de modelos e embeddings tambem aguardam ate 30 minutos.
+Isso permite aguardar modelos lentos; nao aumenta a velocidade da inferencia.
+Se a espera expirar, confira o estado do LM Studio antes de reenviar.
+
+PASTAS
+Programa: %LOCALAPPDATA%\Programs\RCA-RAG Lab
+Documentos e indices: %LOCALAPPDATA%\RCA-RAG Lab\colecoes\principal
+Logs: %LOCALAPPDATA%\RCA-RAG Lab\logs
+Nao altera PATH, nao instala servicos, nao cria regras de firewall.
+O servidor escuta apenas em 127.0.0.1.
+Nenhum documento, indice ou conversa desta maquina acompanha o instalador.
+
+ATUALIZACAO E DESINSTALACAO
+Encerre a ferramenta antes de reinstalar ou desinstalar.
+Desinstale por Configuracoes > Aplicativos > RCA-RAG Lab.
+Os documentos, indices e logs sao preservados na pasta de dados acima.
+Faca backup dessa pasta para guardar suas colecoes.
+
+DIAGNOSTICO
+Use o atalho Diagnosticar RCA-RAG Lab no menu Iniciar.
+Diagnosticar_RAG.cmd verifica as APIs locais nas portas 1234 e 1235.
+Verificar_pacote.cmd testa a ferramenta sem precisar do LM Studio.
+Falhas iniciais: %LOCALAPPDATA%\RCA-RAG Lab\falha_inicializacao.log.
+O instalador nao possui assinatura digital de editor. Politicas corporativas
+podem impedir execucao de aplicativos mesmo em instalacoes por usuario.
+
+REMOVER DOCUMENTOS DA BASE (VERSAO 0.3.2)
+Em Seus documentos, marque os PDFs e use Remover selecionados.
+Limpar toda a base retira todos os PDFs da colecao atual.
+Uma confirmacao mostra os efeitos antes de prosseguir.
+As copias importadas ficam em colecoes\principal\removidos\DATA_DA_OPERACAO.
+Elas nao participam mais da busca. Os arquivos originais fora da ferramenta
+permanecem intactos. Para restaurar, adicione novamente os PDFs arquivados.
+A busca lexical dos PDFs restantes e atualizada automaticamente.
+Os vetores e caches anteriores sao limpos; gere embeddings novamente
+para usar a busca vetorial. A conversa desta aba tambem e limpa para
+nao enviar conteudo antigo ao modelo. Exporte a conversa antes, se precisar.
+A remocao fica bloqueada enquanto embeddings ou inferencia estao em andamento.

@@ -1,0 +1,32 @@
+# Ambientes, caches e arquivos locais
+.venv/
+venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.env
+.env.*
+!.env.example
+.DS_Store
+Thumbs.db
+*.log
+
+# Documentos e bases criadas durante o uso
+/documentos/
+/dados/
+/demo/
+/colecoes/
+/logs/
+/removidos/
+
+# Compilação e instaladores: anexar o EXE na seção Releases do GitHub
+/tmp/
+/distribuicao/
+/build/
+/dist/
+/release/*
+*.exe
+*.zip
+
+# Relatórios locais do teste de instalação
+/docs/validacao_instalador_*.json
