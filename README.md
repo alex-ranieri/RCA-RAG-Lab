@@ -1,13 +1,13 @@
 # RCA-RAG Lab
 
-Ferramenta local para conversar com PDFs usando LM Studio/Bionic. Versão 0.3.2,
+Ferramenta local para conversar com PDFs usando LM Studio/Bionic. Versão 0.3.3,
 de 16/11/2026. Interface em português, busca lexical BM25, busca por embeddings,
 busca híbrida, referências por página e histórico de conversa.
 
 ## Instalar no Windows
 
 Na seção **Releases** deste repositório, baixe
-`Instalar_RCA_RAG_2026.11.16_v3_x64.exe` da versão `v0.3.2` e execute normalmente.
+`Instalar_RCA_RAG_2026.11.16_v4_x64.exe` da versão `v0.3.3` e execute normalmente.
 Windows 11 x64. A instalação ocorre por usuário, sem precisar de administrador.
 O Python embutido e as bibliotecas acompanham o instalador; a instalação funciona
 sem internet. LM Studio/Bionic e os modelos devem estar preparados separadamente.
@@ -18,6 +18,15 @@ Ative a API local no LM Studio/Bionic, importe PDFs, clique em **Indexar PDFs**
 e selecione um modelo de geração. A detecção automática consulta as portas 1234 e 1235.
 
 ## Alterações desta versão
+
+- Top-K divide o limite de caracteres entre os trechos selecionados; as respostas
+  mostram o número solicitado, o enviado e o citado pelo modelo.
+- Avisos de geração são apresentados como avisos; falhas reais permanecem distintas.
+- Contextos de 1.024, 2.048, 4.096, 8.192, 16.384, 32.768, 65.536 e 131.072 tokens.
+  Opções acima do máximo informado pelo modelo ficam desabilitadas. Clique em
+  Aplicar ao modelo para recarregar; a inferência usa o contexto realmente carregado.
+- Explicações ao passar o mouse sobre os controles e opções da interface.
+
 
 - Seleção de PDFs para **Remover selecionados** ou **Limpar toda a base**.
 - PDFs retirados são arquivados em `removidos`, fora da busca.
@@ -82,3 +91,5 @@ preexistente com o mesmo identificador. Após compilar o EXE conforme o guia:
 Veja [COMPILAR_WINDOWS.md](docs/COMPILAR_WINDOWS.md) para recriar o instalador e
 [PUBLICAR_NO_GITHUB.md](PUBLICAR_NO_GITHUB.md) para publicar o código e a release.
 As [instruções de uso](packaging_rag/LEIA-ME-INSTALADOR.txt) acompanham o instalador.
+
+Para atualizar um repositório já publicado, veja [ATUALIZAR_NO_GITHUB.md](ATUALIZAR_NO_GITHUB.md).

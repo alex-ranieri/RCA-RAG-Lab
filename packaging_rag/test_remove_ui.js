@@ -8,6 +8,10 @@ class Element {
  constructor(tag='div'){this.tagName=tag;this.children=[];this.style={};this.classList={add(){},remove(){}};this.checked=false;this.disabled=false;this.value='';}
  append(...children){this.children.push(...children);}
  replaceChildren(...children){this.children=[...children];}
+ remove(){}
+ scrollIntoView(){}
+ setAttribute(key,value){this[key]=value;}
+ get options(){return this.tagName==='select'?this.children:[];}
 }
 function findBoxes(){const out=[];function walk(n){if(n.type==='checkbox')out.push(n);for(const c of n.children||[])walk(c);}walk(elements.get('docs'));return out;}
 const document={
@@ -60,6 +64,33 @@ vm.runInContext('api=testApi;',context);
  assert.equal(base.pdfs.length,0);
  assert.equal(elements.get('clearBase').disabled,true);
  assert.equal(elements.get('removeSelected').disabled,true);
- console.log('Interface: seleção, cancelamento, remoção parcial/total, histórico e bloqueio durante embeddings OK');
+ context.testTurn={question:'Pergunta',images:[],settings:{model:'teste'},result:{
+  answer:'Resposta sem marcador.',engine:'BM25',warning:'Resposta sem marcadores de fonte; confira os trechos antes de usar.',
+  top_k_requested:5,top_k_sent:5,context_limited:true,citations:{citations:[]},
+  evidence:Array.from({length:5},(_,i)=>({label:'F'+(i+1),doc:'teste.pdf',page:1,text:'Texto',id:String(i),score:1}))}};
+ vm.runInContext('renderTurn(testTurn)',context);
+ const answer=elements.get('conversation').children.at(-1);
+ assert(answer.children.some(x=>x.className==='notice'&&x.textContent.startsWith('Aviso:')));
+ assert(!answer.children.some(x=>x.className==='error'));
+ const summary=vm.runInContext('retrievalSummary(testTurn.result)',context);
+ assert(summary.includes('5 solicitado(s) · 5 trecho(s) enviado(s) · 0 citado(s)'));
+ assert(summary.includes('abreviados'));
+ vm.runInContext("$('topK').value='4'",context);
+ assert.equal(vm.runInContext('options().top_k',context),4);
+ vm.runInContext("message('Falha real','error')",context);
+ assert.equal(elements.get('message').className,'error');
+ elements.get('contextLength').tagName='select';
+ for(const size of [1024,2048,4096,8192,16384,32768,65536,131072]){const option=new Element('option');option.value=String(size);elements.get('contextLength').append(option);}
+ elements.get('contextLength').value='131072';
+ elements.get('chatModel').value='teste';
+ vm.runInContext("catalog=[{id:'teste',max_context_length:32768,loaded_context_length:8192,reasoning_options:[],native:true}];updateCapabilities()",context);
+ assert.equal(elements.get('contextLength').value,'32768');
+ assert(elements.get('contextLength').options.find(x=>x.value==='65536').disabled);
+ assert(!elements.get('contextLength').options.find(x=>x.value==='16384').disabled);
+ assert(elements.get('topK').title.includes('Não obriga'));
+ assert(elements.get('contextLength').title.includes('memória'));
+ assert(elements.get('contextLength').options.at(-1).title.includes('Acima do máximo'));
+ assert(elements.get('askBtn')['aria-description']);
+ console.log('Interface: remoção, top-K, métricas, avisos e falhas reais OK');
 })().catch(e=>{console.error(e);process.exitCode=1;});
 

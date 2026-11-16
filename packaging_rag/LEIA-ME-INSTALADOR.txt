@@ -6,7 +6,7 @@ No LM Studio, prepare os modelos e ative o servidor de API local.
 LM Studio, Bionic e modelos nao fazem parte deste instalador.
 
 INSTALACAO
-Execute Instalar_RCA_RAG_2026.11.16_v3_x64.exe normalmente, sem executar
+Execute Instalar_RCA_RAG_2026.11.16_v4_x64.exe normalmente, sem executar
 como administrador. Clique em Avancar e Instalar.
 Python 3.14.10 embutido, pypdf e fonttools ja estao incluidos.
 Nao precisa instalar Python, usar pip ou acessar a internet para instalar.
@@ -63,3 +63,12 @@ Os vetores e caches anteriores sao limpos; gere embeddings novamente
 para usar a busca vetorial. A conversa desta aba tambem e limpa para
 nao enviar conteudo antigo ao modelo. Exporte a conversa antes, se precisar.
 A remocao fica bloqueada enquanto embeddings ou inferencia estao em andamento.
+TOP-K, CONTEXTO E AJUDA (VERSAO 0.3.3)
+O espaco de evidencias e dividido entre os trechos do top-K.
+A resposta informa quantos trechos foram enviados e quantos foram citados.
+Top-K e o maximo de trechos recuperados, nao uma obrigacao de citar todos.
+Avisos da resposta aparecem como avisos, sem a aparencia de falha.
+Contextos: 1.024, 2.048, 4.096, 8.192, 16.384, 32.768, 65.536 e 131.072 tokens.
+Opcoes acima do maximo declarado pelo modelo ficam desabilitadas.
+Clique Aplicar ao modelo para recarregar; contextos maiores exigem mais memoria.
+Passe o mouse sobre os controles para ver as explicacoes.

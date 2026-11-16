@@ -6,7 +6,7 @@ import sys
 import portable_main
 
 portable_main.HOME = Path(os.environ['LOCALAPPDATA']) / 'RCA-RAG Lab'
-portable_main.VERSION = '0.3.2-instalador-2026.11.16'
+portable_main.VERSION = '0.3.3-instalador-2026.11.16'
 
 if __name__ == '__main__':
     try:

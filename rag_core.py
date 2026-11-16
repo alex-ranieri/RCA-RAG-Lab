@@ -179,15 +179,16 @@ def combine_scores(bm25_scores, vector_scores, limit=6):
     return sorted(ranks.items(),key=lambda x:(-x[1],x[0]))[:limit]
 
 def pick_context(index, ranked, top_k=3, max_chars=2500):
+    # Reserva espaço para todos os resultados selecionados antes de truncar.
+    candidates=list(ranked)[:min(top_k,max_chars//170)]
     selected=[]; used=0
-    for idx,score in ranked:
-        if len(selected)>=top_k: break
+    for position,(idx,score) in enumerate(candidates):
         chunk=index['chunks'][idx]
-        left=max_chars-used
-        if left < 170:break
+        left=(max_chars-used)//(len(candidates)-position)
         text=chunk['text'][:left]
         selected.append({'label':f'F{len(selected)+1}', 'id':chunk['id'],
-            'doc':chunk['doc'],'page':chunk['page'],'text':text,'score':round(score,4)})
+            'doc':chunk['doc'],'page':chunk['page'],'text':text,'score':round(score,4),
+            'truncated':len(text)<len(chunk['text'])})
         used+=len(text)
     return selected
 

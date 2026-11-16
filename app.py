@@ -73,7 +73,7 @@ class State:
 
     def load_model(self,request):
         model=str(request.get('model',''))
-        length=number(request.get('context_length',4096),1024,8192,'Contexto',True)
+        length=number(request.get('context_length',4096),1024,131072,'Contexto',True)
         with self.inference_lock:
             detail=self.model_detail(model)
             if detail['type']!='llm' or not detail['native']:
@@ -255,6 +255,8 @@ class State:
             # Retornos contêm só os trechos de maior relevância: nunca o PDF inteiro.
             evidence=pick_context(index,ranking,top_k,max_chars)
             return {'evidence':evidence,'engine':engine,'warning':warning,
+                    'top_k_requested':top_k,'top_k_sent':len(evidence),
+                    'ranked_count':len(ranking),'context_limited':any(e['truncated'] for e in evidence),
                     'requested_engine':mode,'retrieval_query':question,
                     'context_chars':sum(len(s['text']) for s in evidence),
                     'retrieval_seconds':round(time.perf_counter()-started,4),
@@ -267,7 +269,7 @@ class State:
         model=str(request.get('model','')).strip()
         if not model:raise ValueError('Selecione um modelo de geração no LM Studio.')
         no_rag=bool(request.get('no_rag',False))
-        top_k=max(1,min(int(request.get('top_k',3)),5))
+        top_k=number(request.get('top_k',3),1,5,'Top-K',True)
         context_budget=max(1000,min(int(request.get('context_budget',2500)),4000))
         mode=str(request.get('mode','bm25'))
         embedding_model=str(request.get('embedding_model','')).strip()
@@ -275,7 +277,7 @@ class State:
         top_p=number(request.get('top_p',.95),.01,1,'Top-p')
         max_tokens=number(request.get('max_tokens',350),32,2048,'Máximo de geração',True)
         timeout_seconds=number(request.get('timeout_seconds',1800),60,7200,'Tempo de espera (segundos)',True)
-        context_length=number(request.get('context_length',4096),1024,8192,'Contexto',True)
+        context_length=number(request.get('context_length',4096),1024,131072,'Contexto',True)
         seed=request.get('seed')
         if seed not in (None,''):seed=number(seed,0,2147483647,'Seed',True)
         else:seed=None
@@ -291,7 +293,7 @@ class State:
         if reasoning!='auto' and detail['reasoning_control']=='responses' and seed is not None:
             raise ValueError('Seed não está disponível no transporte Responses com reasoning. Deixe em branco.')
         effective_context=min(context_length,detail.get('loaded_context_length') or 4096,
-                              detail.get('max_context_length') or 4096)
+                              detail.get('max_context_length') or detail.get('loaded_context_length') or 4096)
         retrieval_query=q
         if history and (len(q.split())<7 or re.search(r'\b(isso|esse|essa|esses|elas|eles|anterior)\b',q.lower())):
             prior=[m['content'] if isinstance(m['content'],str) else m['content'][0]['text'] for m in history if m['role']=='user']
@@ -300,15 +302,28 @@ class State:
         if not no_rag and not retrieval['evidence']:
             return {'answer':'Nenhum trecho relevante foi encontrado na busca lexical. Reformule a pergunta ou teste a busca híbrida.',
                 'citations':check_citations('',[]),'time_seconds':0,'usage':{},'finish_reason':'no_context',**retrieval}
-        messages=prompt_for(q,retrieval['evidence'])
-        messages[0]['content']+=' O histórico serve apenas à continuidade, não como evidência científica. As fontes [F1] etc referem-se somente aos trechos deste turno. Diferencie imagens anexadas de evidências dos PDFs.'
         instructions=str(request.get('instructions','')).strip()
         if len(instructions)>800:raise ValueError('Instruções adicionais: máximo de 800 caracteres.')
-        if instructions:messages[0]['content']+=' Preferências de formato do participante: '+instructions
-        if detail['reasoning_control']=='qwen3_prompt':
-            messages[-1]['content']+='\n'+('/think' if reasoning=='on' else '/no_think')
-        messages[-1]['content']=clean_content(messages[-1]['content'],images)
-        messages,dropped,estimated=fit_messages(messages[0],messages[-1],history,effective_context,max_tokens)
+        while True:
+            messages=prompt_for(q,retrieval['evidence'])
+            messages[0]['content']+=' O histórico serve apenas à continuidade, não como evidência científica. As fontes [F1] etc referem-se somente aos trechos deste turno. Diferencie imagens anexadas de evidências dos PDFs.'
+            if instructions:messages[0]['content']+=' Preferências de formato do participante: '+instructions
+            if detail['reasoning_control']=='qwen3_prompt':
+                messages[-1]['content']+='\n'+('/think' if reasoning=='on' else '/no_think')
+            messages[-1]['content']=clean_content(messages[-1]['content'],images)
+            try:
+                messages,dropped,estimated=fit_messages(messages[0],messages[-1],history,effective_context,max_tokens)
+                break
+            except ValueError:
+                evidence=retrieval['evidence']
+                # Mantém o top-K; reduz o texto para o contexto real do modelo.
+                if not evidence or all(len(e['text'])<=170 for e in evidence):raise
+                for e in evidence:
+                    size=max(170,int(len(e['text'])*.8))
+                    if size<len(e['text']):e['truncated']=True
+                    e['text']=e['text'][:size]
+                retrieval['context_chars']=sum(len(e['text']) for e in evidence)
+                retrieval['context_limited']=True
         if self.auto_backend:self.connected_models()
         with self.inference_lock:
             if revision!=self.collection_revision:
@@ -335,7 +350,7 @@ class State:
                 'prompt_chars':sum(len(m['content']) if isinstance(m['content'],str) else sum(len(x.get('text','')) for x in m['content']) for m in messages),
                 'history_messages_sent':len(messages)-2,'history_messages_dropped':dropped,
                 'estimated_input_tokens':estimated,'effective_context_length':effective_context,
-                'settings':{'temperature':temperature,'top_p':top_p,'max_tokens':max_tokens,'seed':seed,'timeout_seconds':timeout_seconds,
+                'settings':{'top_k':top_k,'context_budget':context_budget,'temperature':temperature,'top_p':top_p,'max_tokens':max_tokens,'seed':seed,'timeout_seconds':timeout_seconds,
                             'reasoning':reasoning,'context_length':context_length,'reasoning_control':detail['reasoning_control']},
                 'memory_before':before,'memory_after':after,
                 'output_tokens_per_second':round(result['usage'].get('completion_tokens',0)/elapsed,2) if elapsed else None,
@@ -474,7 +489,7 @@ class Handler(BaseHTTPRequestHandler):
             if route=='/api/search':
                 question=str(data.get('question','')).strip()[:1000]
                 if not question:raise ValueError('Digite uma pergunta.')
-                k=max(1,min(int(data.get('top_k',3)),5))
+                k=number(data.get('top_k',3),1,5,'Top-K',True)
                 max_chars=max(1000,min(int(data.get('context_budget',2500)),4000))
                 return self.json_out(STATE.retrieve(question,k,max_chars,str(data.get('mode','bm25')),str(data.get('embedding_model','')),str(data.get('embedding_profile','auto'))))
             if route=='/api/ask':return self.json_out(STATE.ask(data))

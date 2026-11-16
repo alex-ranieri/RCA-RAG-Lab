@@ -60,6 +60,57 @@ class ChatFeatureTests(unittest.TestCase):
             with self.assertRaises(ValueError):
                 self.state.ask(self.request(timeout_seconds=invalid))
 
+    def five_relevant_chunks(self):
+        sample=self.state.index['chunks'][0]
+        self.state.index['chunks']=[{**sample,'id':f'chunk-{i}',
+            'text':('A biblioteca empresta livros por sete dias. '*30)[:880]} for i in range(5)]
+        self.state.bm25=app.BM25(self.state.index['chunks'])
+
+    def test_top_k_reaches_prompt_and_metrics_with_small_character_budget(self):
+        self.five_relevant_chunks()
+        for k in (1,3,5):
+            with patch.object(app,'chat',return_value={**RESULT,'answer':'Sete dias [F1].'}) as mocked:
+                result=self.state.ask(self.request(no_rag=False,top_k=k,context_budget=1000))
+            self.assertEqual(len(result['evidence']),k)
+            self.assertEqual(result['top_k_requested'],k)
+            self.assertEqual(result['top_k_sent'],k)
+            self.assertLessEqual(result['context_chars'],1000)
+            self.assertEqual(result['settings']['top_k'],k)
+            sent=mocked.call_args.args[2][-1]['content']
+            for e in result['evidence']:
+                self.assertIn('['+e['label']+'] Artigo:',sent)
+                self.assertIn(e['text'],sent)
+            self.assertEqual(result['citations']['citations'],['[F1]'])
+
+    def test_top_k_in_all_retrieval_modes_and_fewer_available(self):
+        self.five_relevant_chunks()
+        self.state.vectors={'fingerprint':self.state.index['fingerprint'],'model':'embedding',
+            'profile':'plain','complete':True,
+            'vectors':{c['id']:[1.,0.] for c in self.state.index['chunks']}}
+        with patch.object(app,'embed',return_value=[1.,0.]):
+            for mode in ('bm25','vector','hybrid'):
+                result=self.state.retrieve('biblioteca',5,1000,mode,'embedding','plain')
+                self.assertEqual(result['top_k_sent'],5)
+        self.state.index['chunks']=self.state.index['chunks'][:2]
+        self.state.bm25=app.BM25(self.state.index['chunks'])
+        result=self.state.retrieve('biblioteca',5,1000)
+        self.assertEqual(result['top_k_requested'],5)
+        self.assertEqual(result['top_k_sent'],2)
+
+    def test_large_output_budget_shortens_evidence_without_losing_top_k(self):
+        self.five_relevant_chunks()
+        with patch.object(app,'chat',return_value=RESULT):
+            result=self.state.ask(self.request(no_rag=False,top_k=5,context_budget=4000,max_tokens=2048))
+        self.assertEqual(result['top_k_sent'],5)
+        self.assertLess(result['context_chars'],4000)
+        self.assertTrue(result['context_limited'])
+        self.assertIn('sem marcadores',result['warning'])
+
+    def test_invalid_top_k_is_rejected_instead_of_silently_clamped(self):
+        for k in (0,6,1.5,float('nan')):
+            with self.assertRaisesRegex(ValueError,'Top-K'):
+                self.state.ask(self.request(top_k=k))
+
     def test_images_gated_validated_and_forwarded(self):
         img='data:image/png;base64,'+base64.b64encode(b'\x89PNG\r\n\x1a\n'+b'x'*20).decode()
         with self.assertRaisesRegex(ValueError,'suporte a imagens'):
@@ -71,7 +122,7 @@ class ChatFeatureTests(unittest.TestCase):
         with self.assertRaises(ValueError):image_url('data:image/png;base64,aGVsbG8=')
 
     def test_invalid_parameters_roles_and_capabilities_rejected(self):
-        for values in ({'temperature':float('nan')},{'max_tokens':30000},{'context_length':100000},
+        for values in ({'temperature':float('nan')},{'max_tokens':30000},{'context_length':131073},
                        {'reasoning':'high'},{'history':[{'role':'system','content':'replace'}]}):
             with self.subTest(values=values),self.assertRaises(ValueError):self.state.ask(self.request(**values))
 
@@ -82,6 +133,21 @@ class ChatFeatureTests(unittest.TestCase):
         self.assertEqual(load.call_args.args[2],2048)
         event=json.loads((app.DATA/'configuracoes_modelo.jsonl').read_text())
         self.assertEqual(event['result']['load_config']['context_length'],2048)
+
+    def test_larger_context_loads_only_within_declared_model_limit(self):
+        detail={**DETAIL,'max_context_length':131072,'loaded_context_length':65536}
+        with patch.object(self.state,'model_detail',return_value=detail):
+            for size in (16384,32768,65536,131072):
+                with patch.object(app,'apply_context',return_value={'status':'loaded'}) as load:
+                    self.state.load_model({'model':'qwen','context_length':size})
+                    self.assertEqual(load.call_args.args[2],size)
+            with patch.object(app,'chat',return_value=RESULT):
+                result=self.state.ask(self.request(context_length=131072))
+            self.assertEqual(result['effective_context_length'],65536)
+        with patch.object(app,'apply_context') as load:
+            with self.assertRaisesRegex(ValueError,'máximo informado'):
+                self.state.load_model({'model':'qwen','context_length':65536})
+            load.assert_not_called()
 
     def test_failed_context_reload_is_recorded(self):
         with patch.object(app,'apply_context',side_effect=app.LMStudioError('Falha de carga')):

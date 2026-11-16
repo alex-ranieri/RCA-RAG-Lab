@@ -59,7 +59,7 @@ def fit_messages(system,current,history,context,max_output):
     while estimate(messages)>available and len(messages)>2:
         del messages[1:3];dropped+=2
     if estimate(messages)>available:
-        raise ValueError('Pergunta/evidências/imagens excedem o orçamento estimado. Reduza evidências ou imagens, ou aplique contexto maior.')
+        raise ValueError('Contexto insuficiente para pergunta, evidências e resposta. Reduza top-K, saída máxima ou imagens, ou aplique contexto maior ao modelo.')
     return messages,dropped,estimate(messages)
 
 def profile_for(model,profile='auto'):

@@ -17,7 +17,7 @@ from urllib.request import Request, build_opener, ProxyHandler
 from urllib.error import URLError
 
 ROOT = Path(__file__).resolve().parents[1]
-SETUP = ROOT / 'distribuicao' / 'Instalar_RCA_RAG_2026.11.16_v3_x64.exe'
+SETUP = ROOT / 'distribuicao' / 'Instalar_RCA_RAG_2026.11.16_v4_x64.exe'
 CASE = ROOT / 'tmp' / 'instalador_rag' / ('teste_' + str(time.time_ns()))
 INSTALL = CASE / 'Instalação com espaços e acentuação'
 CASE.mkdir(parents=True)
@@ -28,7 +28,7 @@ for name in ('PYTHONPATH', 'PYTHONHOME', 'VIRTUAL_ENV'):
     env.pop(name, None)
 REPORT = {'status': 'running', 'case': str(CASE), 'checks': [],
           'installer_sha256': hashlib.sha256(SETUP.read_bytes()).hexdigest()}
-TARGET = ROOT / 'docs' / 'validacao_instalador_20261116_v3.json'
+TARGET = ROOT / 'docs' / 'validacao_instalador_20261116_v4.json'
 
 
 def checked(name, detail=None):
@@ -124,6 +124,8 @@ def main():
         else:
             raise RuntimeError('Servidor não respondeu em 30 segundos.')
         assert b'Converse com seus PDFs' in api('/')
+        assert b'value="131072"' in api('/')
+        assert b'aria-description' in api('/app.js')
         assert b'function history' in api('/app.js')
         info = api('/api/info')
         assert not info['pdfs'] and info['chunk_count'] == 0
@@ -152,6 +154,9 @@ def main():
         assert b'removeSelected' in api('/') and b'clearBase' in api('/')
         api('/api/upload?name=segundo.pdf',pdf)
         api('/api/index',b'{}')
+        retrieved=api('/api/search',json.dumps({'question':'emprestimo','top_k':5}).encode())
+        assert retrieved['top_k_requested']==5 and retrieved['top_k_sent']==2
+        checked('Top-K e novas opções de contexto/ajuda na interface instalada')
         removed=api('/api/documents/remove',json.dumps({'confirm':True,'filenames':['teste.pdf']}).encode())
         assert removed['remaining']==1 and removed['indexed']
         assert (Path(removed['archived_to'])/'teste.pdf').read_bytes()==pdf
