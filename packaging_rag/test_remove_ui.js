@@ -91,6 +91,15 @@ vm.runInContext('api=testApi;',context);
  assert(elements.get('contextLength').title.includes('memória'));
  assert(elements.get('contextLength').options.at(-1).title.includes('Acima do máximo'));
  assert(elements.get('askBtn')['aria-description']);
+ elements.get('topK').value='50';elements.get('maxTokens').value='8192';elements.get('budget').value='50000';
+ vm.runInContext('updateBudgetAdvice()',context);
+ assert.equal(elements.get('budgetAdvice').className,'notice');
+ assert.equal(vm.runInContext('options().top_k',context),50);
+ elements.get('allowContextOverflow').checked=true;
+ assert.equal(vm.runInContext('options().allow_context_overflow',context),true);
+ const fourCited={...context.testTurn.result,citations:{citations:['[F1]','[F2]','[F3]','[F4]']}};
+ context.fourCited=fourCited;
+ assert(vm.runInContext('retrievalSummary(fourCited)',context).includes('5 trecho(s) enviado(s) · 4 citado(s)'));
  console.log('Interface: remoção, top-K, métricas, avisos e falhas reais OK');
 })().catch(e=>{console.error(e);process.exitCode=1;});
 

@@ -60,7 +60,7 @@ def main():
             '@echo off\nsetlocal\nchcp 65001 >nul\n'
             '"%~dp0runtime\\python.exe" "%~dp0app\\packaging_rag\\installed_main.py" '
             + extra + ' %*\n' + ('pause\n' if extra else 'if errorlevel 1 pause\n'), encoding='ascii')
-    info = {'version': '0.3.3.2026.11.16', 'python': '3.14.10', 'dependencies': versions,
+    info = {'version': '0.3.4.2026.11.16', 'python': '3.14.10', 'dependencies': versions,
             'embed_sha256': hashlib.sha256(args.embed.read_bytes()).hexdigest(),
             'scope': 'RCA-RAG Lab; LM Studio e Bionic externos', 'per_user': True}
     (payload / 'VERSAO.json').write_text(json.dumps(info, indent=2), encoding='utf-8')
@@ -73,7 +73,7 @@ def main():
     subprocess.run([str(args.iscc), '/Q', '/DPayloadDir=' + str(payload),
                     str(ROOT / 'packaging_rag' / 'installer.iss')], check=True)
     print('Payload:', payload)
-    print('Instalador:', ROOT / 'distribuicao' / 'Instalar_RCA_RAG_2026.11.16_v4_x64.exe')
+    print('Instalador:', ROOT / 'distribuicao' / 'Instalar_RCA_RAG_2026.11.16_v5_x64.exe')
 
 
 if __name__ == '__main__':

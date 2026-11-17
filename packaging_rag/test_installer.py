@@ -17,7 +17,7 @@ from urllib.request import Request, build_opener, ProxyHandler
 from urllib.error import URLError
 
 ROOT = Path(__file__).resolve().parents[1]
-SETUP = ROOT / 'distribuicao' / 'Instalar_RCA_RAG_2026.11.16_v4_x64.exe'
+SETUP = ROOT / 'distribuicao' / 'Instalar_RCA_RAG_2026.11.16_v5_x64.exe'
 CASE = ROOT / 'tmp' / 'instalador_rag' / ('teste_' + str(time.time_ns()))
 INSTALL = CASE / 'Instalação com espaços e acentuação'
 CASE.mkdir(parents=True)
@@ -28,7 +28,7 @@ for name in ('PYTHONPATH', 'PYTHONHOME', 'VIRTUAL_ENV'):
     env.pop(name, None)
 REPORT = {'status': 'running', 'case': str(CASE), 'checks': [],
           'installer_sha256': hashlib.sha256(SETUP.read_bytes()).hexdigest()}
-TARGET = ROOT / 'docs' / 'validacao_instalador_20261116_v4.json'
+TARGET = ROOT / 'docs' / 'validacao_instalador_20261116_v5.json'
 
 
 def checked(name, detail=None):
@@ -126,6 +126,8 @@ def main():
         assert b'Converse com seus PDFs' in api('/')
         assert b'value="131072"' in api('/')
         assert b'aria-description' in api('/app.js')
+        assert b'id="allowContextOverflow"' in api('/')
+        assert b'max="100"' in api('/')
         assert b'function history' in api('/app.js')
         info = api('/api/info')
         assert not info['pdfs'] and info['chunk_count'] == 0

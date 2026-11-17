@@ -1,6 +1,6 @@
 # Recriar o instalador Windows
 
-O código nesta pasta corresponde ao instalador 0.3.3. A preparação usa Python
+O código nesta pasta corresponde ao instalador 0.3.4. A preparação usa Python
 3.14.10 embed x64 e Inno Setup 7.1.1. O instalador tem `PrivilegesRequired=lowest`,
 usa `%LOCALAPPDATA%\Programs\RCA-RAG Lab` e registra a desinstalação por usuário.
 
@@ -32,7 +32,7 @@ Ajuste os caminhos se necessário. Execute na raiz:
 .\.venv\Scripts\python.exe packaging_rag\build_installer.py --embed "$env:USERPROFILE\Downloads\python-3.14.10-embed-amd64.zip" --packages .venv\Lib\site-packages --iscc "C:\Program Files\Inno Setup 7\ISCC.exe"
 ```
 
-O resultado será `distribuicao/Instalar_RCA_RAG_2026.11.16_v4_x64.exe`.
+O resultado será `distribuicao/Instalar_RCA_RAG_2026.11.16_v5_x64.exe`.
 O build prepara o payload em uma subpasta nova de `tmp/instalador_rag/` e
 sobrescreve o EXE de mesmo nome em `distribuicao/`.
 

@@ -5,7 +5,7 @@
 [Setup]
 AppId={{E9C20D44-10D3-466B-A122-D026CE149634}
 AppName=RCA-RAG Lab
-AppVersion=0.3.3.2026.11.16
+AppVersion=0.3.4.2026.11.16
 AppPublisher=RCA
 DefaultDirName={localappdata}\Programs\RCA-RAG Lab
 DefaultGroupName=RCA-RAG Lab
@@ -14,7 +14,7 @@ ArchitecturesAllowed=x64compatible
 ArchitecturesInstallIn64BitMode=x64compatible
 MinVersion=10.0.22000
 OutputDir=..\distribuicao
-OutputBaseFilename=Instalar_RCA_RAG_2026.11.16_v4_x64
+OutputBaseFilename=Instalar_RCA_RAG_2026.11.16_v5_x64
 Compression=lzma2
 SolidCompression=yes
 WizardStyle=modern

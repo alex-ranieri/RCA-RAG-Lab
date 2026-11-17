@@ -2,7 +2,7 @@
 
 Se este repositório já está publicado, use [ATUALIZAR_NO_GITHUB.md](ATUALIZAR_NO_GITHUB.md). O roteiro abaixo é para um repositório novo.
 
-Esta pasta contém o código-fonte da versão 0.3.3 e somente o instalador mais
+Esta pasta contém o código-fonte da versão 0.3.4 e somente o instalador mais
 recente, dentro de `release/`. Os binários dessa pasta são ignorados pelo Git:
 o código vai para o repositório e o EXE é anexado em **Releases**.
 
@@ -28,7 +28,7 @@ git init
 git branch -M main
 git add .
 git status --short
-git commit -m "RCA-RAG Lab 0.3.3"
+git commit -m "RCA-RAG Lab 0.3.4"
 git remote add origin https://github.com/SEU_USUARIO/RCA-RAG-Lab.git
 git push -u origin main
 ```
@@ -48,12 +48,12 @@ no computador com o EXE para a etapa seguinte. Não use `git add -f` nesse fluxo
 
 No repositório criado, abra **Releases > Draft a new release**.
 
-1. Em **Choose a tag**, crie `v0.3.3` apontando para a branch `main`.
-2. Título: `RCA-RAG Lab 0.3.3 — Windows x64`.
-3. Copie a descrição de [docs/NOTAS_RELEASE_v0.3.3.md](docs/NOTAS_RELEASE_v0.3.3.md).
+1. Em **Choose a tag**, crie `v0.3.4` apontando para a branch `main`.
+2. Título: `RCA-RAG Lab 0.3.4 — Windows x64`.
+3. Copie a descrição de [docs/NOTAS_RELEASE_v0.3.4.md](docs/NOTAS_RELEASE_v0.3.4.md).
 4. Na área de anexos, adicione estes dois arquivos da pasta local `release/`:
-   `Instalar_RCA_RAG_2026.11.16_v4_x64.exe` e
-   `Instalar_RCA_RAG_2026.11.16_v4_x64.exe.sha256`.
+   `Instalar_RCA_RAG_2026.11.16_v5_x64.exe` e
+   `Instalar_RCA_RAG_2026.11.16_v5_x64.exe.sha256`.
 5. Marque **Set as latest release**, quando essa opção aparecer. Deixe
    **This is a pre-release** desmarcado para apresentar esta versão como estável.
 6. Confira os anexos e clique em **Publish release**.
@@ -65,14 +65,14 @@ Nesta pasta de entrega não há instaladores das versões anteriores.
 ## 4. Conferir o resultado
 
 - O repositório deve mostrar o README, o código, a interface e os testes.
-- A release `v0.3.3` deve mostrar apenas o EXE v3 e o SHA-256 como anexos manuais.
+- A release `v0.3.4` deve mostrar apenas o EXE v3 e o SHA-256 como anexos manuais.
 - Para distribuir a ferramenta, compartilhe o endereço dessa release.
 
 Você pode conferir o arquivo local no PowerShell:
 
 ```powershell
-Get-FileHash .\release\Instalar_RCA_RAG_2026.11.16_v4_x64.exe -Algorithm SHA256
-Get-Content .\release\Instalar_RCA_RAG_2026.11.16_v4_x64.exe.sha256
+Get-FileHash .\release\Instalar_RCA_RAG_2026.11.16_v5_x64.exe -Algorithm SHA256
+Get-Content .\release\Instalar_RCA_RAG_2026.11.16_v5_x64.exe.sha256
 ```
 
 Os dois hashes devem ser iguais, desconsiderando maiúsculas e minúsculas.

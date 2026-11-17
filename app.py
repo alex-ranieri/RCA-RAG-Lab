@@ -20,7 +20,7 @@ from rag_core import (BM25, build_index, check_citations, combine_scores, cosine
                       doc_signature, pick_context, prompt_for, pdf_files)
 from lmstudio_api import LMStudioError, chat, embed, list_models, validate_base_url, model_catalog, apply_context
 from recursos import memory_snapshot
-from conversation import number, clean_content, history_pairs, fit_messages, profile_for, embedding_input
+from conversation import number, clean_content, history_pairs, fit_messages, profile_for, embedding_input, estimate
 
 ROOT=Path(__file__).resolve().parent
 DOCS=ROOT/'documentos'
@@ -223,7 +223,8 @@ class State:
         with self.lock:
             if not self.is_ready(): raise ValueError('Primeiro clique em Indexar PDFs.')
             index=self.index
-            lex=self.bm25.search(question,limit=30)
+            ranking_limit=max(30,top_k)
+            lex=self.bm25.search(question,limit=ranking_limit)
             warning=''
             engine='BM25'
             ranking=lex
@@ -247,8 +248,8 @@ class State:
                                 sim=cosine(q,vec)
                                 semantic.append((i,sim))
                         semantic.sort(key=lambda a:-a[1])
-                        semantic=semantic[:30]
-                        ranking=combine_scores(lex,semantic,limit=30) if mode=='hybrid' else semantic
+                        semantic=semantic[:ranking_limit]
+                        ranking=combine_scores(lex,semantic,limit=ranking_limit) if mode=='hybrid' else semantic
                         engine='BM25 + embeddings (RRF)' if mode=='hybrid' else 'Vetorial (cosseno)'
                     except (LMStudioError,ValueError) as exc:
                         warning='Embeddings indisponíveis; fallback BM25. Detalhe: '+str(exc)[:180]
@@ -269,13 +270,16 @@ class State:
         model=str(request.get('model','')).strip()
         if not model:raise ValueError('Selecione um modelo de geração no LM Studio.')
         no_rag=bool(request.get('no_rag',False))
-        top_k=number(request.get('top_k',3),1,5,'Top-K',True)
-        context_budget=max(1000,min(int(request.get('context_budget',2500)),4000))
+        top_k=number(request.get('top_k',3),1,100,'Top-K',True)
+        context_budget=number(request.get('context_budget',2500),1000,1000000,'Evidências (caracteres)',True)
         mode=str(request.get('mode','bm25'))
         embedding_model=str(request.get('embedding_model','')).strip()
         temperature=number(request.get('temperature',.1),0,1,'Temperatura')
         top_p=number(request.get('top_p',.95),.01,1,'Top-p')
-        max_tokens=number(request.get('max_tokens',350),32,2048,'Máximo de geração',True)
+        requested_max_tokens=number(request.get('max_tokens',350),32,131072,'Saída máxima (tokens)',True)
+        max_tokens=requested_max_tokens
+        allow_overflow=request.get('allow_context_overflow',False)
+        if not isinstance(allow_overflow,bool):raise ValueError('Opção de extrapolar contexto inválida.')
         timeout_seconds=number(request.get('timeout_seconds',1800),60,7200,'Tempo de espera (segundos)',True)
         context_length=number(request.get('context_length',4096),1024,131072,'Contexto',True)
         seed=request.get('seed')
@@ -294,6 +298,15 @@ class State:
             raise ValueError('Seed não está disponível no transporte Responses com reasoning. Deixe em branco.')
         effective_context=min(context_length,detail.get('loaded_context_length') or 4096,
                               detail.get('max_context_length') or detail.get('loaded_context_length') or 4096)
+        recommended_output=max(32,int(effective_context*.25))
+        recommended_chars=max(1000,int(effective_context*.45*2.5))
+        recommended_k=max(1,min(100,recommended_chars//880))
+        budget_alerts=[]
+        if requested_max_tokens>recommended_output:
+            budget_alerts.append(f'Saída solicitada acima da recomendação de {recommended_output} tokens para o contexto atual; pode demorar mais.')
+        if not no_rag and (top_k>recommended_k or context_budget>recommended_chars):
+            budget_alerts.append(f'Recuperação acima da recomendação de {recommended_k} trechos e {recommended_chars} caracteres para o contexto atual.')
+        if not allow_overflow:max_tokens=min(max_tokens,max(32,int(effective_context*.75)))
         retrieval_query=q
         if history and (len(q.split())<7 or re.search(r'\b(isso|esse|essa|esses|elas|eles|anterior)\b',q.lower())):
             prior=[m['content'] if isinstance(m['content'],str) else m['content'][0]['text'] for m in history if m['role']=='user']
@@ -316,13 +329,24 @@ class State:
                 break
             except ValueError:
                 evidence=retrieval['evidence']
-                # Mantém o top-K; reduz o texto para o contexto real do modelo.
-                if not evidence or all(len(e['text'])<=170 for e in evidence):raise
-                for e in evidence:
-                    size=max(170,int(len(e['text'])*.8))
-                    if size<len(e['text']):e['truncated']=True
-                    e['text']=e['text'][:size]
+                if allow_overflow:
+                    messages=[messages[0]]+history+[messages[-1]]
+                    dropped=0;estimated=estimate(messages)
+                    budget_alerts.append('Envio acima do orçamento estimado de contexto autorizado. O LM Studio pode recusar a solicitação; reduza top-K, evidências ou saída se isso ocorrer.')
+                    break
+                if evidence and any(len(e['text'])>170 for e in evidence):
+                    for e in evidence:
+                        size=max(170,int(len(e['text'])*.8))
+                        if size<len(e['text']):e['truncated']=True
+                        e['text']=e['text'][:size]
+                elif len(evidence)>1:
+                    evidence.pop()
+                else:
+                    available=effective_context-max(256,int(effective_context*.1))-estimate([messages[0],messages[-1]])
+                    if available<32 or available>=max_tokens:raise
+                    max_tokens=available
                 retrieval['context_chars']=sum(len(e['text']) for e in evidence)
+                retrieval['top_k_sent']=len(evidence)
                 retrieval['context_limited']=True
         if self.auto_backend:self.connected_models()
         with self.inference_lock:
@@ -336,11 +360,13 @@ class State:
             elapsed=round(time.monotonic()-start,2)
             after=memory_snapshot()
         citations=check_citations(result['answer'],retrieval['evidence'])
-        alerts=[]
+        alerts=budget_alerts
+        if max_tokens<requested_max_tokens:
+            alerts.append(f'Saída máxima ajustada de {requested_max_tokens} para {max_tokens} tokens para caber no contexto. Para tentar enviar sem ajuste, marque Permitir extrapolar contexto estimado.')
         if dropped:alerts.append(f'{dropped//2} turno(s) antigo(s) omitido(s) do envio para caber no contexto; continuam visíveis na conversa.')
         if effective_context<context_length:alerts.append(f'Orçamento limitado a {effective_context} tokens; aplique o contexto no modelo para usar mais.')
         if not no_rag and not citations['has_citation']:
-            alerts.append('Resposta sem marcadores de fonte; confira os trechos antes de usar.')
+            alerts.append('O modelo respondeu sem citações [F1], [F2] etc. A geração foi concluída; confira os trechos recuperados antes de usar a resposta.')
         if citations['invalid_citations']:
             alerts.append('A resposta cita fragmentos ausentes do contexto.')
         if result['finish_reason']=='length':alerts.append('Resposta interrompida pelo limite de geração.')
@@ -350,7 +376,9 @@ class State:
                 'prompt_chars':sum(len(m['content']) if isinstance(m['content'],str) else sum(len(x.get('text','')) for x in m['content']) for m in messages),
                 'history_messages_sent':len(messages)-2,'history_messages_dropped':dropped,
                 'estimated_input_tokens':estimated,'effective_context_length':effective_context,
-                'settings':{'top_k':top_k,'context_budget':context_budget,'temperature':temperature,'top_p':top_p,'max_tokens':max_tokens,'seed':seed,'timeout_seconds':timeout_seconds,
+                'answer_chars':len(result['answer']),
+                'context_recommendations':{'top_k':recommended_k,'evidence_chars':recommended_chars,'output_tokens':recommended_output},
+                'settings':{'top_k':top_k,'context_budget':context_budget,'temperature':temperature,'top_p':top_p,'max_tokens':max_tokens,'requested_max_tokens':requested_max_tokens,'allow_context_overflow':allow_overflow,'seed':seed,'timeout_seconds':timeout_seconds,
                             'reasoning':reasoning,'context_length':context_length,'reasoning_control':detail['reasoning_control']},
                 'memory_before':before,'memory_after':after,
                 'output_tokens_per_second':round(result['usage'].get('completion_tokens',0)/elapsed,2) if elapsed else None,
@@ -489,8 +517,8 @@ class Handler(BaseHTTPRequestHandler):
             if route=='/api/search':
                 question=str(data.get('question','')).strip()[:1000]
                 if not question:raise ValueError('Digite uma pergunta.')
-                k=number(data.get('top_k',3),1,5,'Top-K',True)
-                max_chars=max(1000,min(int(data.get('context_budget',2500)),4000))
+                k=number(data.get('top_k',3),1,100,'Top-K',True)
+                max_chars=number(data.get('context_budget',2500),1000,1000000,'Evidências (caracteres)',True)
                 return self.json_out(STATE.retrieve(question,k,max_chars,str(data.get('mode','bm25')),str(data.get('embedding_model','')),str(data.get('embedding_profile','auto'))))
             if route=='/api/ask':return self.json_out(STATE.ask(data))
             if route=='/api/model/load':return self.json_out(STATE.load_model(data))

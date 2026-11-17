@@ -6,7 +6,7 @@ No LM Studio, prepare os modelos e ative o servidor de API local.
 LM Studio, Bionic e modelos nao fazem parte deste instalador.
 
 INSTALACAO
-Execute Instalar_RCA_RAG_2026.11.16_v4_x64.exe normalmente, sem executar
+Execute Instalar_RCA_RAG_2026.11.16_v5_x64.exe normalmente, sem executar
 como administrador. Clique em Avancar e Instalar.
 Python 3.14.10 embutido, pypdf e fonttools ja estao incluidos.
 Nao precisa instalar Python, usar pip ou acessar a internet para instalar.
@@ -72,3 +72,17 @@ Contextos: 1.024, 2.048, 4.096, 8.192, 16.384, 32.768, 65.536 e 131.072 tokens.
 Opcoes acima do maximo declarado pelo modelo ficam desabilitadas.
 Clique Aplicar ao modelo para recarregar; contextos maiores exigem mais memoria.
 Passe o mouse sobre os controles para ver as explicacoes.
+
+LIMITES FLEXIVEIS (VERSAO 0.3.4)
+Top-K: 1 a 100 trechos. Saida maxima: 32 a 131.072 tokens.
+Entrada dos PDFs: 1.000 a 1.000.000 de caracteres.
+As recomendacoes variam com o contexto realmente carregado no modelo.
+Voce pode ultrapassar as recomendacoes, com aviso. Por padrao o sistema ajusta
+trechos e saida se nao couberem no contexto e informa os valores efetivos.
+Permitir extrapolar contexto estimado autoriza tentar o envio acima da estimativa,
+sem esses ajustes. O LM Studio pode recusar; a capacidade real do modelo nao muda.
+A antiga instrucao fixa de responder em ate 80 palavras foi removida.
+Saida maxima e um teto em tokens, nao um tamanho garantido em caracteres.
+Entrada dos PDFs controla os trechos enviados, nao o comprimento da resposta.
+Top-K 5 pode enviar cinco trechos e a resposta citar apenas quatro deles.
+Ausencia de [F1], [F2] etc e um aviso de citacao, nao uma falha de geracao.

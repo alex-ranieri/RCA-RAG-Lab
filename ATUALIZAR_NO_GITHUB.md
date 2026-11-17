@@ -1,6 +1,6 @@
-# Atualizar o GitHub para a versão 0.3.3
+# Atualizar o GitHub para a versão 0.3.4
 
-A pasta RCA-RAG-Lab já está atualizada com os fontes e o novo instalador v4.
+A pasta RCA-RAG-Lab já está atualizada com os fontes e o novo instalador v5.
 O repositório e o remote existentes foram preservados. Não execute git init nem
 git remote add novamente.
 
@@ -19,7 +19,7 @@ Confira as alterações e envie:
 ```powershell
 git add .
 git status --short
-git commit -m "Corrige top-K e adiciona contexto e ajuda - v0.3.3"
+git commit -m "Amplia top-K e saida com contexto flexivel - v0.3.4"
 git push origin main
 ```
 
@@ -38,11 +38,11 @@ serão enviados como anexos na próxima etapa. Não use `git add -f` para os bin
 Abra [as releases do repositório](https://github.com/alex-ranieri/RCA-RAG-Lab/releases)
 e clique em **Draft a new release**.
 
-1. Crie a tag **v0.3.3**, apontando para **main**, após o push do código.
-2. Título: **RCA-RAG Lab 0.3.3 — Windows x64**.
-3. Copie a descrição de [docs/NOTAS_RELEASE_v0.3.3.md](docs/NOTAS_RELEASE_v0.3.3.md).
-4. Anexe os arquivos locais `release/Instalar_RCA_RAG_2026.11.16_v4_x64.exe`
-   e `release/Instalar_RCA_RAG_2026.11.16_v4_x64.exe.sha256`.
+1. Crie a tag **v0.3.4**, apontando para **main**, após o push do código.
+2. Título: **RCA-RAG Lab 0.3.4 — Windows x64**.
+3. Copie a descrição de [docs/NOTAS_RELEASE_v0.3.4.md](docs/NOTAS_RELEASE_v0.3.4.md).
+4. Anexe os arquivos locais `release/Instalar_RCA_RAG_2026.11.16_v5_x64.exe`
+   e `release/Instalar_RCA_RAG_2026.11.16_v5_x64.exe.sha256`.
 5. Marque **Set as latest release**, se essa opção aparecer, e publique.
 
 Crie uma release nova para que a tag antiga continue correspondendo à versão
@@ -50,7 +50,7 @@ anterior. A pasta local `release/` contém apenas o instalador atual.
 
 ## 3. Atualizar a ferramenta instalada
 
-Encerre a janela do servidor anterior e execute o instalador v4 normalmente,
+Encerre a janela do servidor anterior e execute o instalador v5 normalmente,
 sem executar como administrador. Abra novamente pelo menu Iniciar e recarregue
 a página do navegador. Os documentos e índices são preservados.
 
@@ -59,3 +59,13 @@ o modelo com esse tamanho. Contextos maiores precisam de mais memória; opções
 acima do máximo declarado pelo modelo ficam desabilitadas.
 
 Veja também a [documentação de releases do GitHub](https://docs.github.com/en/repositories/releasing-projects-on-github/managing-releases-in-a-repository).
+
+## Configurações ampliadas
+
+O valor Entrada dos PDFs é a quantidade máxima de caracteres das evidências,
+não o tamanho da resposta. Saída máxima é um teto em tokens: não exige que o
+modelo produza esse tamanho. Use Preferências de resposta para pedir detalhes.
+
+Recomendações acompanham o contexto efetivo. Valores acima delas são aceitos com
+aviso. Para tentar ultrapassar a estimativa sem ajustes automáticos, marque
+Permitir extrapolar contexto estimado; o servidor do modelo pode rejeitar o envio.

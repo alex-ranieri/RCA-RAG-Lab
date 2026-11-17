@@ -1,13 +1,13 @@
 # RCA-RAG Lab
 
-Ferramenta local para conversar com PDFs usando LM Studio/Bionic. Versão 0.3.3,
+Ferramenta local para conversar com PDFs usando LM Studio/Bionic. Versão 0.3.4,
 de 16/11/2026. Interface em português, busca lexical BM25, busca por embeddings,
 busca híbrida, referências por página e histórico de conversa.
 
 ## Instalar no Windows
 
 Na seção **Releases** deste repositório, baixe
-`Instalar_RCA_RAG_2026.11.16_v4_x64.exe` da versão `v0.3.3` e execute normalmente.
+`Instalar_RCA_RAG_2026.11.16_v5_x64.exe` da versão `v0.3.4` e execute normalmente.
 Windows 11 x64. A instalação ocorre por usuário, sem precisar de administrador.
 O Python embutido e as bibliotecas acompanham o instalador; a instalação funciona
 sem internet. LM Studio/Bionic e os modelos devem estar preparados separadamente.
@@ -19,22 +19,19 @@ e selecione um modelo de geração. A detecção automática consulta as portas 
 
 ## Alterações desta versão
 
-- Top-K divide o limite de caracteres entre os trechos selecionados; as respostas
-  mostram o número solicitado, o enviado e o citado pelo modelo.
-- Avisos de geração são apresentados como avisos; falhas reais permanecem distintas.
-- Contextos de 1.024, 2.048, 4.096, 8.192, 16.384, 32.768, 65.536 e 131.072 tokens.
-  Opções acima do máximo informado pelo modelo ficam desabilitadas. Clique em
-  Aplicar ao modelo para recarregar; a inferência usa o contexto realmente carregado.
-- Explicações ao passar o mouse sobre os controles e opções da interface.
-
-
-- Seleção de PDFs para **Remover selecionados** ou **Limpar toda a base**.
-- PDFs retirados são arquivados em `removidos`, fora da busca.
-- Busca lexical dos documentos restantes atualizada automaticamente; vetores e
-  caches anteriores são limpos. Gere embeddings novamente para usar busca vetorial.
-- Confirmação antes de remover; conversa desta aba limpa após a operação.
-- Espera padrão pelo modelo de 30 minutos, configurável de 1 a 120 minutos,
-  com indicação do tempo decorrido na interface.
+- Top-K de 1 a 100, com sugestões e recomendações associadas ao contexto carregado.
+- Saída máxima de 32 a 131.072 tokens; removida a instrução fixa de até 80 palavras.
+- Entrada dos PDFs de 1.000 a 1.000.000 de caracteres, distinta da saída em tokens.
+- Recomendações podem ser ultrapassadas com aviso. Por padrão, ajusta-se o envio
+  quando ele não cabe no contexto, informando os valores solicitados e efetivos.
+- A opção **Permitir extrapolar contexto estimado** tenta enviar sem esses ajustes
+  quando a estimativa excede o contexto. Isso não aumenta a capacidade real do modelo:
+  o LM Studio pode recusar ou truncar o pedido.
+- Top-K é um máximo de trechos enviados, não uma obrigação de citar todos.
+  Cinco trechos enviados podem resultar em quatro citações.
+- Ausência de citações é um aviso de verificabilidade, não uma falha de geração.
+- Mantidos os contextos de 1.024 a 131.072 tokens, a ajuda ao passar o mouse e
+  a remoção seletiva/total de PDFs da base com arquivamento fora da busca.
 
 Os dados instalados ficam em `%LOCALAPPDATA%\RCA-RAG Lab` e são preservados
 na atualização e desinstalação. Confira as respostas e citações nos PDFs originais.

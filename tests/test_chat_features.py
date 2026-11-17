@@ -104,12 +104,58 @@ class ChatFeatureTests(unittest.TestCase):
         self.assertEqual(result['top_k_sent'],5)
         self.assertLess(result['context_chars'],4000)
         self.assertTrue(result['context_limited'])
-        self.assertIn('sem marcadores',result['warning'])
+        self.assertIn('sem citações',result['warning'])
 
     def test_invalid_top_k_is_rejected_instead_of_silently_clamped(self):
-        for k in (0,6,1.5,float('nan')):
+        for k in (0,101,1.5,float('nan')):
             with self.assertRaisesRegex(ValueError,'Top-K'):
                 self.state.ask(self.request(top_k=k))
+
+    def many_relevant_chunks(self):
+        self.five_relevant_chunks()
+        sample=self.state.index['chunks'][0]
+        self.state.index['chunks']=[{**sample,'id':f'chunk-{i}'} for i in range(50)]
+        self.state.bm25=app.BM25(self.state.index['chunks'])
+
+    def test_expanded_top_k_and_output_use_loaded_context(self):
+        self.many_relevant_chunks()
+        detail={**DETAIL,'max_context_length':131072,'loaded_context_length':65536}
+        with patch.object(self.state,'model_detail',return_value=detail),patch.object(app,'chat',return_value=RESULT) as mocked:
+            result=self.state.ask(self.request(no_rag=False,top_k=50,context_budget=50000,max_tokens=8192,context_length=65536))
+        self.assertEqual(result['top_k_sent'],50)
+        self.assertEqual(mocked.call_args.kwargs['max_tokens'],8192)
+        self.assertEqual(result['settings']['requested_max_tokens'],8192)
+        self.assertNotIn('80 palavras',mocked.call_args.args[2][0]['content'])
+
+    def test_recommendations_are_soft_and_overflow_requires_explicit_flag(self):
+        with patch.object(app,'chat',return_value=RESULT) as mocked:
+            result=self.state.ask(self.request(max_tokens=1500))
+        self.assertEqual(mocked.call_args.kwargs['max_tokens'],1500)
+        self.assertIn('acima da recomendação',result['warning'])
+        self.many_relevant_chunks()
+        request=self.request(no_rag=False,top_k=50,context_budget=50000,max_tokens=8192,context_length=2048)
+        with patch.object(app,'chat',return_value=RESULT) as mocked:
+            result=self.state.ask({**request,'allow_context_overflow':True})
+        self.assertEqual(mocked.call_args.kwargs['max_tokens'],8192)
+        self.assertEqual(result['top_k_sent'],50)
+        self.assertIn('contexto autorizado',result['warning'])
+        self.assertGreater(result['estimated_input_tokens']+8192,2048)
+        with patch.object(app,'chat',return_value=RESULT) as mocked:
+            result=self.state.ask(request)
+        self.assertLess(result['top_k_sent'],50)
+        self.assertLess(mocked.call_args.kwargs['max_tokens'],8192)
+        self.assertLessEqual(result['estimated_input_tokens']+result['settings']['max_tokens']+256,2048)
+        self.assertIn('ajustada',result['warning'])
+
+    def test_five_evidence_chunks_may_yield_four_cited_sources(self):
+        self.five_relevant_chunks()
+        response={**RESULT,'answer':'Dados [F1] [F2] [F3] [F4].'}
+        with patch.object(app,'chat',return_value=response):
+            result=self.state.ask(self.request(no_rag=False,top_k=5,context_budget=2000))
+        self.assertEqual(result['top_k_sent'],5)
+        self.assertEqual(len(result['citations']['citations']),4)
+        self.assertEqual(result['answer_chars'],len(response['answer']))
+        self.assertNotIn('sem citações',result['warning'])
 
     def test_images_gated_validated_and_forwarded(self):
         img='data:image/png;base64,'+base64.b64encode(b'\x89PNG\r\n\x1a\n'+b'x'*20).decode()
@@ -122,7 +168,7 @@ class ChatFeatureTests(unittest.TestCase):
         with self.assertRaises(ValueError):image_url('data:image/png;base64,aGVsbG8=')
 
     def test_invalid_parameters_roles_and_capabilities_rejected(self):
-        for values in ({'temperature':float('nan')},{'max_tokens':30000},{'context_length':131073},
+        for values in ({'temperature':float('nan')},{'max_tokens':131073},{'context_length':131073},
                        {'reasoning':'high'},{'history':[{'role':'system','content':'replace'}]}):
             with self.subTest(values=values),self.assertRaises(ValueError):self.state.ask(self.request(**values))
 
