@@ -1,12 +1,31 @@
 # RCA-RAG Lab
 
+<p align="center">
+  <a href="https://github.com/alex-ranieri/RCA-RAG-Lab/releases/tag/v0.3.4"><img src="https://img.shields.io/badge/Release-v0.3.4-176C62?style=flat-square" alt="Release v0.3.4"></a>
+  <img src="https://img.shields.io/badge/Windows-11%20x64-0078D4?style=flat-square" alt="Windows 11 x64">
+  <img src="https://img.shields.io/badge/IA-Local-176C62?style=flat-square" alt="Inteligência artificial local">
+  <img src="https://img.shields.io/badge/Interface-PT--BR-475569?style=flat-square" alt="Interface em português">
+</p>
+
 Ferramenta local para conversar com PDFs usando LM Studio/Bionic. Versão 0.3.4,
 de 16/11/2026. Interface em português, busca lexical BM25, busca por embeddings,
 busca híbrida, referências por página e histórico de conversa.
 
+## Materiais e downloads do curso
+
+Recursos para preparar o ambiente e acompanhar as atividades práticas de IA local, RAG e agentes aplicados a documentos.
+
+| Recurso | Descrição | Download |
+| --- | --- | --- |
+| **RCA-RAG Lab** | Instalador da ferramenta de RAG local para Windows 11 x64. | [![Baixar RCA-RAG Lab](https://img.shields.io/badge/Baixar-RCA--RAG%20Lab-176C62?style=flat-square&logo=github&logoColor=white)](https://github.com/alex-ranieri/RCA-RAG-Lab/releases/download/v0.3.4/Instalar_RCA_RAG_2026.11.16_v5_x64.exe) |
+| **Modelos de IA local** | Modelos necessários para as atividades práticas do curso. | [![Baixar modelos](https://img.shields.io/badge/Baixar-Modelos-176C62?style=flat-square&logo=googledrive&logoColor=white)](https://drive.google.com/drive/folders/1yaCp1dJQngLddHpL7ctNv-dJez7YyCBU?usp=sharing) |
+| **DocNexus** | Ferramenta complementar para as atividades de organização e conexão de documentos. | [![Baixar DocNexus](https://img.shields.io/badge/Baixar-DocNexus-176C62?style=flat-square&logo=googledrive&logoColor=white)](https://drive.google.com/drive/folders/1_Nz19dE7CyNPvZHMoCzD4Dbmw9I7Xii1?usp=sharing) |
+
+Os modelos e o DocNexus são distribuídos separadamente do instalador do RCA-RAG Lab. Prepare os modelos no LM Studio/Bionic antes das atividades práticas.
+
 ## Instalar no Windows
 
-Na seção **Releases** deste repositório, baixe
+Na seção [**Releases**](https://github.com/alex-ranieri/RCA-RAG-Lab/releases/tag/v0.3.4) deste repositório, baixe
 `Instalar_RCA_RAG_2026.11.16_v5_x64.exe` da versão `v0.3.4` e execute normalmente.
 Windows 11 x64. A instalação ocorre por usuário, sem precisar de administrador.
 O Python embutido e as bibliotecas acompanham o instalador; a instalação funciona
@@ -73,6 +92,42 @@ preexistente com o mesmo identificador. Após compilar o EXE conforme o guia:
 ```powershell
 .\.venv\Scripts\python.exe packaging_rag\test_installer.py
 ```
+
+## Tecnologias utilizadas
+
+### Aplicação e interface
+
+[![Python](https://img.shields.io/badge/Python-3.14-3776AB?style=flat-square&logo=python&logoColor=white)](https://www.python.org/)
+[![HTML5](https://img.shields.io/badge/HTML5-E34F26?style=flat-square&logo=html5&logoColor=white)](https://developer.mozilla.org/pt-BR/docs/Web/HTML)
+[![CSS](https://img.shields.io/badge/CSS-663399?style=flat-square&logo=css&logoColor=white)](https://developer.mozilla.org/pt-BR/docs/Web/CSS)
+[![JavaScript](https://img.shields.io/badge/JavaScript-F7DF1E?style=flat-square&logo=javascript&logoColor=black)](https://developer.mozilla.org/pt-BR/docs/Web/JavaScript)
+[![JSON](https://img.shields.io/badge/JSON-475569?style=flat-square&logo=json&logoColor=white)](https://www.json.org/)
+
+### Processamento documental e IA local
+
+[![pypdf](https://img.shields.io/badge/pypdf-6.21.4-3776AB?style=flat-square)](https://pypi.org/project/pypdf/)
+[![fonttools](https://img.shields.io/badge/fonttools-4.68.0-3776AB?style=flat-square)](https://pypi.org/project/fonttools/)
+[![LM Studio](https://img.shields.io/badge/LM%20Studio-Local%20API-6254C8?style=flat-square)](https://lmstudio.ai/)
+![Bionic](https://img.shields.io/badge/Bionic-Local%20API-6254C8?style=flat-square)
+
+### Empacotamento e testes
+
+[![Inno Setup](https://img.shields.io/badge/Inno%20Setup-7.1.1-475569?style=flat-square)](https://jrsoftware.org/isinfo.php)
+[![Node.js](https://img.shields.io/badge/Node.js-Testes-339933?style=flat-square&logo=nodedotjs&logoColor=white)](https://nodejs.org/)
+![unittest](https://img.shields.io/badge/unittest-Python-3776AB?style=flat-square)
+
+| Componente | Implementação |
+| --- | --- |
+| Backend | Python e biblioteca padrão (`http.server`, `urllib.request`) para servidor HTTP e comunicação com a API local. |
+| Frontend | HTML, CSS e JavaScript nativo, sem framework web. |
+| Documentos | `pypdf` para extração de texto por página; `fonttools` incluído nas dependências. |
+| Recuperação | BM25, similaridade de cosseno e fusão de rankings por Reciprocal Rank Fusion (RRF), implementados em Python. |
+| Inferência | Integração HTTP com LM Studio/Bionic para geração e embeddings locais. |
+| Persistência | Índices textuais e vetoriais em arquivos JSON na coleção local. |
+| Distribuição | Python 3.14.10 embutido e Inno Setup 7.1.1 para instalação offline no Windows. |
+| Validação | `unittest` para testes Python e Node.js para testes dos controles da interface (não é necessário para executar a aplicação). |
+
+Tecnologias identificadas em [`requirements.txt`](requirements.txt), [`app.py`](app.py), [`rag_core.py`](rag_core.py), [`lmstudio_api.py`](lmstudio_api.py), [`web/`](web/) e no [guia de compilação](docs/COMPILAR_WINDOWS.md).
 
 ## Código e compilação
 
