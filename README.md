@@ -18,8 +18,8 @@ Recursos para preparar o ambiente e acompanhar as atividades práticas de IA loc
 | Recurso | Descrição | Download |
 | --- | --- | --- |
 | **RCA-RAG Lab** | Instalador da ferramenta de RAG local para Windows 11 x64. | [![Baixar RCA-RAG Lab](https://img.shields.io/badge/Baixar-RCA--RAG%20Lab-176C62?style=flat-square&logo=github&logoColor=white)](https://github.com/alex-ranieri/RCA-RAG-Lab/releases/download/v0.3.4/Instalar_RCA_RAG_2026.11.16_v5_x64.exe) |
-| **Modelos de IA local** | Modelos necessários para as atividades práticas do curso. | [![Baixar modelos](https://img.shields.io/badge/Baixar-Modelos-176C62?style=flat-square&logo=googledrive&logoColor=white)](https://drive.google.com/drive/folders/1yaCp1dJQngLddHpL7ctNv-dJez7YyCBU?usp=sharing) |
-| **DocNexus** | Ferramenta complementar para as atividades de organização e conexão de documentos. | [![Baixar DocNexus](https://img.shields.io/badge/Baixar-DocNexus-176C62?style=flat-square&logo=googledrive&logoColor=white)](https://drive.google.com/drive/folders/1_Nz19dE7CyNPvZHMoCzD4Dbmw9I7Xii1?usp=sharing) |
+| **Modelos de IA local** | Modelos necessários para as atividades práticas do curso. | [![Baixar modelos](https://img.shields.io/badge/Baixar-Modelos-176C62?style=flat-square&logo=googledrive&logoColor=white)](https://drive.google.com/drive/folders/1xtp0qvN2X7Tu0YtVpGOBrSLJWlZHgidj) |
+| **DocNexus** | Ferramenta complementar para as atividades de organização e conexão de documentos. | [![Baixar DocNexus](https://img.shields.io/badge/Baixar-DocNexus-176C62?style=flat-square&logo=googledrive&logoColor=white[)](https://drive.google.com/drive/folders/1_Nz19dE7CyNPvZHMoCzD4Dbmw9I7Xii1?usp=sharing](https://drive.google.com/drive/folders/1xtp0qvN2X7Tu0YtVpGOBrSLJWlZHgidj)) |
 
 Os modelos e o DocNexus são distribuídos separadamente do instalador do RCA-RAG Lab. Prepare os modelos no LM Studio/Bionic antes das atividades práticas.
 
